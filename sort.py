@@ -43,7 +43,7 @@ class Sort() :
             for rect, height in zip(self.rects, y) :
                 rect.set_height(height)
             self.fig.canvas.draw()
-        plt.pause(0.000001)
+        plt.pause(10.000001)
 
     def swap(self, a_idx, b_idx) :
         if a_idx == b_idx :
@@ -133,8 +133,60 @@ class QuickSort(Sort) :
             self._topDownQuickSort(start, leftmost_idx)
             self._topDownQuickSort(leftmost_idx+1, end)
 
+class RadixSort(Sort) :
+
+    def __init__(self, rangeToSort=range(1000), desc=False, base=10) :
+        super(RadixSort, self).__init__(rangeToSort, desc)
+        self.base = base
+
+
+    def sort(self) :
+        maximum_exponent = self.getMaximumExponent()
+        self._radixSort(0, len(self.arrDf.index.values), maximum_exponent, current_exponent=0)
+        self.plot()
+
+    def getMaximumExponent(self) :
+        max_val = max([i[0] for i in self.arrDf.values.tolist()])
+        exponent = 0
+        while not max_val//(self.base**exponent) < 10 :
+            exponent += 1
+        return exponent
+
+
+    def _radixSort(self, start, end, maximum_exponent, current_exponent) :
+        base = self.base
+        divider = base**current_exponent
+        if current_exponent > maximum_exponent :
+            self.plot()
+            return
+        else :
+            countList = [0]*base
+            tmpList = [0]*(end-start)
+            for i in range(len(tmpList)) :
+                remainder = (self.arrDf.iloc[start+i].values[0] // divider) % base
+                print(remainder)
+                countList[remainder] += 1
+
+            for i in range(1, base) :
+                countList[i] = countList[i] + countList[i-1];
+
+            for idx in range(end-start-1, -1, -1) :
+                remainder = (self.arrDf.iloc[start+idx].values[0] // divider) % base
+                tmpList[countList[remainder]-1] = self.arrDf.iloc[start+idx].values[0]
+                countList[remainder] -= 1
+                idx -= 1
+
+            for i in range(len(tmpList)) :
+                self.arrDf.iloc[start+i] = tmpList[i]
+            self.plot()
+
+            self._radixSort(start, end, maximum_exponent, current_exponent+1)
+
+
+
+
 
 if __name__ == "__main__" :
     sys.setrecursionlimit(100000)
-    sorter = FuckingSlowSort(range(100), desc=False)
+    sorter = RadixSort(range(10000), desc=False, base=10)
     sorter.sort()
