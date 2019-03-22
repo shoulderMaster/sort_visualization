@@ -20,44 +20,47 @@ class Sort() :
             self.compare = self._descending_compare
         else :
             self.compare = self._ascending_compare
+        self.plot_init()
 
     def initialize(self) :
         self.arrDf = self.originalDf.copy()
 
     def _ascending_compare(self, a, b) :
-        #self.plot()
+        #self.plot_update()
         return a < b
 
     def _descending_compare(self, a, b) :
-        #self.plot()
+        #self.plot_update()
         return a > b
 
-    def plot(self) :
+    def plot_init(self) :
         x = self.arrDf.index.values.tolist()
         y = [i[0] for i in self.arrDf.values.tolist()]
         if self.rects == None :
             self.fig = plt.figure(figsize=(24, 8))
             self.rects = plt.bar(x, y)
             plt.show(block=False)
-        else :
-            for rect, height in zip(self.rects, y) :
-                rect.set_height(height)
-            self.fig.canvas.draw()
-        plt.pause(10.000001)
+
+    def plot_update(self, idx_list) :
+        y = [self.arrDf.values[i][0] for i in idx_list]
+        rects = [self.rects[i] for i in idx_list]
+        for rect, height in zip(rects, y) :
+            rect.set_height(height)
+        self.fig.canvas.update()
+        plt.pause(0.000001)
 
     def swap(self, a_idx, b_idx) :
         if a_idx == b_idx :
             return
-        self.plot()
         t_a = self.arrDf.iloc[a_idx].values[0]
         self.arrDf.iloc[a_idx] = self.arrDf.iloc[b_idx].values[0]
         self.arrDf.iloc[b_idx] = t_a
+        self.plot_update([a_idx, b_idx])
 
 class MergeSort(Sort) :
 
     def sort(self) :
         self._topDownMerge(0, len(self.arrDf.index.values))
-        self.plot()
 
     def _topDownMerge(self, start, end) :
         if end-start < 2 :
@@ -83,6 +86,7 @@ class MergeSort(Sort) :
             else :
                 df.iloc[idx] = tdf.iloc[b_idx].values[0]
                 b_idx += 1
+            self.plot_update([idx])
 
 class FuckingSlowSort(Sort) :
 
@@ -103,7 +107,6 @@ class QuickSort(Sort) :
 
     def sort(self) :
         self._topDownQuickSort(0, len(self.arrDf.index.values))
-        self.plot()
 
     def _topDownQuickSort(self, start, end) :
         if end-start < 2 :
@@ -143,7 +146,6 @@ class RadixSort(Sort) :
     def sort(self) :
         maximum_exponent = self.getMaximumExponent()
         self._radixSort(0, len(self.arrDf.index.values), maximum_exponent, current_exponent=0)
-        self.plot()
 
     def getMaximumExponent(self) :
         max_val = max([i[0] for i in self.arrDf.values.tolist()])
@@ -157,7 +159,6 @@ class RadixSort(Sort) :
         base = self.base
         divider = base**current_exponent
         if current_exponent > maximum_exponent :
-            self.plot()
             return
         else :
             countList = [0]*base
@@ -178,15 +179,109 @@ class RadixSort(Sort) :
 
             for i in range(len(tmpList)) :
                 self.arrDf.iloc[start+i] = tmpList[i]
-            self.plot()
+                self.plot_update([i])
 
             self._radixSort(start, end, maximum_exponent, current_exponent+1)
 
 
+class HeapSort(Sort) :
+
+    def __init__(self, rangeToSort=range(1000), desc=False) :
+        super(HeapSort, self).__init__(rangeToSort, desc)
+        self.heapLength = len(self.arrDf.index)
+
+    def sort(self) :
+        self.build_heap()
+        for idx in range(len(self.arrDf.index)-1, -1, -1) :
+            self.arrDf.iloc[idx] = self.pop()
+            self.plot_update([idx])
+
+    def build_heap(self) :
+        start_idx = self.get_parent_index(self.heapLength-1)
+        end_idx = -1
+        for node_idx in range(start_idx, end_idx, -1) :
+            self.heapify(node_idx)
+
+    def isOutOfSize(self, node_idx) :
+        return node_idx >= self.heapLength or node_idx < 0
+
+    def heapify(self, node_idx) :
+        print("heapify : " + str(node_idx))
+        #parent_index = self.get_parent_index(node_idx)
+        left_child_index = self.get_left_child_index(node_idx)
+        right_child_index = self.get_right_child_index(node_idx)
+
+        if self.isOutOfSize(left_child_index) or self.isOutOfSize(node_idx) :
+            return
+        else :
+            node_val = self.get_value_with_node_idx(node_idx)
+            left_child_val = self.get_value_with_node_idx(left_child_index)
+
+            if self.isOutOfSize(right_child_index) :
+                if self.compare(left_child_val, node_val) :
+                    return
+                else :
+                    self.swap(left_child_index, node_idx)
+                    self.heapify(left_child_index)
+            else :
+                right_child_val = self.get_value_with_node_idx(right_child_index)
+
+                if self.compare(left_child_val, node_val) and self.compare(right_child_val, node_val) :
+                    return
+                else :
+                    if self.compare(left_child_val, right_child_val) :
+                        self.swap(right_child_index, node_idx)
+                        self.heapify(right_child_index)
+                    else :
+                        self.swap(left_child_index, node_idx)
+                        self.heapify(left_child_index)
+
+
+    def push(self, value) :
+        self.arrDf.iloc[self.heapLength][0] = -1
+        self.increaseKey(self.heapLength, value)
+        self.heapLength += 1
+
+    def increaseKey(self, index, key) :
+        if self.heapLength == 0 :
+            return
+        elif self.get_value_with_node_idx(index) > key :
+            return
+        else :
+            self.arrDf.iloc[index][0] = key
+            while( (not isOutOfSize(index))
+                    and (not self.compare(
+                        self.get_value_with_node_idx(index),
+                        self.get_value_with_node_idx(self.get_parent_index(index))))) :
+                self.swap(index, self.get_parent_index(index))
+                index = self.get_parent_index(index)
+
+    def pop(self) :
+        retToVal = self.get_value_with_node_idx(0)
+        self.arrDf.iloc[0][0] = self.arrDf.iloc[self.heapLength-1][0]
+        self.heapify(0)
+        self.heapLength -= 1
+        return retToVal
+
+    def get_left_child_index(self, idx) :
+        return (idx+1)*2-1
+
+    def get_right_child_index(self, idx) :
+        return (idx+1)*2
+
+    def get_parent_index(self, idx) :
+        return (idx+1)//2-1
+
+    def get_value_with_node_idx(self, node_idx) :
+        print(node_idx, self.arrDf.values[node_idx][0])
+        return self.arrDf.values[node_idx][0]
 
 
 
 if __name__ == "__main__" :
     sys.setrecursionlimit(100000)
-    sorter = RadixSort(range(10000), desc=False, base=10)
+    #sorter = RadixSort(range(300), desc=False, base=10)
+    #sorter = MergeSort(range(300), desc=False)
+    #sorter = QuickSort(range(300), desc=False)
+    sorter = HeapSort(range(300), desc=False)
     sorter.sort()
