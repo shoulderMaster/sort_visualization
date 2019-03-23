@@ -150,7 +150,7 @@ class RadixSort(Sort) :
     def getMaximumExponent(self) :
         max_val = max([i[0] for i in self.arrDf.values.tolist()])
         exponent = 0
-        while not max_val//(self.base**exponent) < 10 :
+        while not max_val//(self.base**exponent) < self.base :
             exponent += 1
         return exponent
 
@@ -273,15 +273,14 @@ class HeapSort(Sort) :
         return (idx+1)//2-1
 
     def get_value_with_node_idx(self, node_idx) :
-        print(node_idx, self.arrDf.values[node_idx][0])
         return self.arrDf.values[node_idx][0]
 
 
 
 if __name__ == "__main__" :
     sys.setrecursionlimit(100000)
-    #sorter = RadixSort(range(300), desc=False, base=10)
+    sorter = RadixSort(range(100), desc=False, base=7)
     #sorter = MergeSort(range(300), desc=False)
     #sorter = QuickSort(range(300), desc=False)
-    sorter = HeapSort(range(300), desc=False)
+    #sorter = HeapSort(range(20), desc=False)
     sorter.sort()
